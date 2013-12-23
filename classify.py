@@ -14,16 +14,19 @@ for feat in features:
 	feats.append(vals)
 	target_labels.append(feat[len(feat)-2:len(feat)-1])
 
-clf = SVC()
+clf = SVC(kernel="linear", C=0.025)
 clf.fit(feats, target_labels)
 
 feature_file = open("test_features_1000","r")
 features = feature_file.readlines()
 
 write_res = open("results","wb")
+count=1
+write_res.write("id,label\n")
 for feat in features:
 	feat_vals = feat.split(",")
 	predict_vals = []
 	for val in feat_vals:
 		predict_vals.append(int(val))
-	write_res.write(clf.predict(predict_vals)[0])
+	write_res.write(str(count)+","+clf.predict(predict_vals)[0]+"\n")
+	count=count+1
