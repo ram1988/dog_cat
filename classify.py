@@ -1,6 +1,7 @@
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 
-feature_file = open("features_1000","r")
+feature_file = open("features_12500","r")
 features = feature_file.readlines()
 
 target_labels = []
@@ -14,7 +15,8 @@ for feat in features:
 	feats.append(vals)
 	target_labels.append(feat[len(feat)-2:len(feat)-1])
 
-clf = SVC(kernel="linear", C=0.025)
+#clf = SVC(kernel="linear", C=0.025)
+clf = LogisticRegression()
 clf.fit(feats, target_labels)
 
 feature_file = open("test_features_1000","r")

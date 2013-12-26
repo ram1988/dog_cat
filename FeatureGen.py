@@ -3,15 +3,17 @@ import math,json
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 
 class FeatureGen:
-	max_cat_records = 3000
-	max_dog_records = 2000
+	max_cat_records = 12499
+	max_dog_records = 12499
 	kmeans = None
 	n_clusters = 0
 	sift = None
 	def __init__(self):
-		self.kmeans = KMeans()
+		#self.kmeans = KMeans(precompute_distances=False)
+		self.kmeans = MiniBatchKMeans()
 		self.sift = cv2.SIFT()
 		self.n_clusters = self.kmeans.get_params()["n_clusters"]
 		print self.n_clusters
@@ -40,6 +42,7 @@ class FeatureGen:
 				temp_points.append(tuples)
 			file.write(json.dumps(temp_points)+"\n")
 		file.close()
+		'''
 		file = open("test_tuples","w")
 		for idx in range(1,12501):
 			print "processing "+str(idx)+".jpg\n"
@@ -51,9 +54,53 @@ class FeatureGen:
 			for k in tkp:
 				tuples = (int(math.ceil(k.pt[0])),int(math.ceil(k.pt[1])))
 				temp_points.append(tuples)
-			file.write(json.dumps(temp_points)+"\n")
-		file.close()
+			file.write(json.dumps(temp_points)+
+		'''
+	
 	def getSIFTTrainFeatures(self):
+		print "refined version"
+		points = []
+		loaded_feats = []
+		file = open("train_tuples","r")
+		lines = file.readlines()
+		count=1
+		for line in lines:
+			if count >=10000 and count <=12500:
+				print "continue"+str(count)
+				count = count+1
+				continue
+			elif count == 24000:
+				break
+			print count
+			feat_vals = json.loads(line)
+			loaded_feats.append(feat_vals)
+			for feat in feat_vals:
+				points.append(feat)
+			count = count+1
+		print count
+		self.kmeans = self.kmeans.fit(points)
+		overall_feats = []
+		count = 1
+		for feat in loaded_feats:
+			print "Record-->"+str(count)
+			clusters = self.kmeans.predict(feat)
+			print clusters
+			feats = []
+			for i in range(0,self.n_clusters):
+				feats.append(0)
+			if count <10000:
+			#if count<self.max_cat_records:
+				feats.append(0)
+			else:
+				feats.append(1)
+			for num in clusters:
+				feats[num] = feats[num]+1
+			overall_feats.append(feats)
+			count = count+1
+		return overall_feats
+	'''
+	def getSIFTTrainFeatures(self):
+		print "Enter train"
 		points = []
 		loaded_feats = []
 		file = open("train_tuples","r")
@@ -83,6 +130,8 @@ class FeatureGen:
 			overall_feats.append(feats)
 			count = count+1
 		return overall_feats
+	'''
+	
 	def getSIFTTestFeatures(self):
 		features = {}
 		file = open("test_tuples","r")
@@ -115,13 +164,15 @@ featgen = FeatureGen()
 #featgen.prepareTrainTestTuples()
 
 overall_feats = featgen.getSIFTTrainFeatures()
-feature_file = open("features_1000","wb")
+feature_file = open("features_12500","wb")
 for feats in overall_feats:
 	val = ""
 	for vals in feats:
 		val += (str(vals)+",")
 	val = val[0:len(val)-1]
 	feature_file.write(val+"\n")
+
+
 overall_feats = featgen.getSIFTTestFeatures()
 feature_file = open("test_features_1000","wb")
 for feats in overall_feats:
